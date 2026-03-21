@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { supabase } from "@/integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Mail, Lock, User } from "lucide-react";
 
@@ -18,6 +18,10 @@ const Auth = () => {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSupabaseConfigured) {
+      toast.error("Supabase is not configured for this deployment.");
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -53,6 +57,10 @@ const Auth = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isSupabaseConfigured) {
+      toast.error("Supabase is not configured for this deployment.");
+      return;
+    }
     setIsLoading(true);
 
     try {
@@ -87,6 +95,11 @@ const Auth = () => {
           <CardDescription>
             Dropshipping Intelligence Platform
           </CardDescription>
+          {!isSupabaseConfigured && (
+            <p className="text-sm text-amber-600">
+              Authentication is unavailable until `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` are set.
+            </p>
+          )}
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="signin" className="w-full">

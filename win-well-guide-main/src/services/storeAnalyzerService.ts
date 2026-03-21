@@ -7,11 +7,33 @@
 // FastAPI runs on port 8000 by default, but can be overridden
 const API_BASE_URL: string = (() => {
   try {
-    return (import.meta as any).env.VITE_API_URL || "http://localhost:8000";
+    const configuredUrl = (import.meta as any).env.VITE_API_URL;
+    const isProduction = (import.meta as any).env.PROD;
+
+    if (configuredUrl) {
+      return configuredUrl;
+    }
+
+    if (isProduction) {
+      console.warn(
+        "VITE_API_URL is not configured. Product research and store analysis requests will fail until it is set."
+      );
+      return "";
+    }
+
+    return "http://localhost:8000";
   } catch {
     return "http://localhost:8000";
   }
 })();
+
+const requireApiBaseUrl = () => {
+  if (!API_BASE_URL) {
+    throw new Error(
+      "API is not configured for this deployment. Set VITE_API_URL in Amplify."
+    );
+  }
+};
 
 interface StoreAnalysisRequest {
   store_url: string;
@@ -62,6 +84,7 @@ export const analyzeStore = async (
   request: StoreAnalysisRequest
 ): Promise<StoreAnalysisResponse> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/api/analyze-store`, {
       method: "POST",
       headers: {
@@ -91,6 +114,7 @@ export const validateStoreUrl = async (
   storeUrl: string
 ): Promise<StoreValidationResponse> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/api/validate-store`, {
       method: "POST",
       headers: {
@@ -120,6 +144,7 @@ export const getStoreInfo = async (
   storeUrl: string
 ): Promise<StoreInfoResponse> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/api/store-info`, {
       method: "POST",
       headers: {
@@ -165,6 +190,7 @@ export const analyzeProduct = async (
   request: ProductAnalysisRequest
 ): Promise<ProductAnalysisResponse> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/functions/v1/analyze-product`, {
       method: "POST",
       headers: {
@@ -209,6 +235,7 @@ export const researchProduct = async (
   request: ProductResearchRequest
 ): Promise<ProductResearchResponse> => {
   try {
+    requireApiBaseUrl();
     // If searching AliExpress, Amazon, Temu, or Takelott, use the direct scraper endpoints
     const platforms = request.platforms || [];
     
@@ -272,6 +299,7 @@ export const researchProduct = async (
  */
 export const checkApiHealth = async (): Promise<boolean> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/health`);
     return response.ok;
   } catch {
@@ -286,6 +314,7 @@ export const analyzeShopifyStore = async (
   storeUrl: string
 ): Promise<StoreAnalysisResponse> => {
   try {
+    requireApiBaseUrl();
     const response = await fetch(`${API_BASE_URL}/api/analyze-shopify-store`, {
       method: "POST",
       headers: {
