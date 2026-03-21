@@ -1,0 +1,6 @@
+.vercel
+.env
+.venv/
+.vs/
+win-well-guide-main/.vs/
+win-well-guide-main/__pycache__/
