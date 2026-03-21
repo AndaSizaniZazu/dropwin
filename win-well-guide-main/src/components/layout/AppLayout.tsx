@@ -1,6 +1,7 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { useAuth } from "@/hooks/useAuth";
+import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export function AppLayout() {
@@ -14,7 +15,7 @@ export function AppLayout() {
     );
   }
 
-  if (!user) {
+  if (isSupabaseConfigured && !user) {
     return <Navigate to="/auth" replace />;
   }
 
