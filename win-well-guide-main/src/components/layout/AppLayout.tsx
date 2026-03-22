@@ -1,7 +1,6 @@
-import { Outlet, Navigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
 import { BottomNav } from "./BottomNav";
 import { useAuth } from "@/hooks/useAuth";
-import { isSupabaseConfigured } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
 
 export function AppLayout() {
@@ -13,10 +12,6 @@ export function AppLayout() {
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
-  }
-
-  if (isSupabaseConfigured && !user) {
-    return <Navigate to="/auth" replace />;
   }
 
   return (

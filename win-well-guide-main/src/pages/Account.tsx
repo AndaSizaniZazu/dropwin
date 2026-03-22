@@ -1,4 +1,4 @@
-import { User, Store, CreditCard, Bell, HelpCircle, FileText, Shield, LogOut, ChevronRight, Plus, X } from "lucide-react";
+import { Store, CreditCard, Bell, HelpCircle, FileText, Shield, ChevronRight, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -133,15 +133,9 @@ export default function Account() {
               <ChevronRight className="w-4 h-4 text-muted-foreground" />
             </Button>
           ))}
-          <Button
-            variant="ghost"
-            className="w-full justify-between h-12 px-4 text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <span className="flex items-center gap-3">
-              <LogOut className="w-4 h-4" />
-              <span className="text-sm">Log Out</span>
-            </span>
-          </Button>
+          <div className="px-4 py-3 text-sm text-muted-foreground">
+            Login is disabled for this preview deployment.
+          </div>
         </section>
 
         {/* App Version */}
