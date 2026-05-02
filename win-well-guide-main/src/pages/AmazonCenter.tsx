@@ -2,6 +2,7 @@ import { ArrowLeft, ExternalLink, Zap, TrendingUp, Package } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { GoogleAccountBanner } from "@/components/GoogleAccountBanner";
 
 export default function AmazonCenter() {
   const navigate = useNavigate();
@@ -33,8 +34,14 @@ export default function AmazonCenter() {
         </div>
       </header>
 
+      {/* Google account banner */}
+      <GoogleAccountBanner
+        platformName="Amazon"
+        platformUrl="https://www.amazon.co.za/gp/bestsellers"
+      />
+
       {/* Iframe Container */}
-      <div className="w-full h-[calc(100vh-3.5rem)] bg-background overflow-hidden">
+      <div className="w-full h-[calc(100vh-3.5rem-52px)] bg-background overflow-hidden">
         <iframe
           src="https://www.amazon.co.za/gp/bestsellers"
           className="w-full h-full border-0"

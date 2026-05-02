@@ -1,6 +1,7 @@
 import { ArrowLeft, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { GoogleAccountBanner } from "@/components/GoogleAccountBanner";
 
 export default function AliExpressCenter() {
   const navigate = useNavigate();
@@ -31,6 +32,12 @@ export default function AliExpressCenter() {
           </a>
         </div>
       </header>
+
+      {/* Google account banner */}
+      <GoogleAccountBanner
+        platformName="AliExpress"
+        platformUrl="https://www.aliexpress.com/dropshipping/"
+      />
 
       {/* Iframe Container */}
       <div className="w-full flex-1">

@@ -1,50 +1,10 @@
 import { useState } from "react";
-import { Search, Play, Eye, Copy, ExternalLink, Send, Bookmark, Users, Store, Video } from "lucide-react";
+import { Search, Copy, ExternalLink, Users, Store, Video } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ProgressBar } from "@/components/ui/progress-bar";
-
-const topAds = [
-  {
-    id: 1,
-    product: "LED Sunset Lamp",
-    thumbnail: "🌅",
-    views: "2.3M",
-    estRevenue: "$50K",
-    platform: "TikTok",
-    hook: "POV: Your room is about to look 10x better for under $30",
-    hookType: "Problem-Solution | POV Style",
-    script: `POV: Your room is about to look 10x better for under $30.
-
-I found this sunset lamp on TikTok and honestly? It hits different.
-
-The golden hour glow makes everything look aesthetic without any effort.
-
-Perfect for content creators, or anyone who wants their space to feel like a vibe.
-
-Link in bio - trust me on this one.`,
-  },
-  {
-    id: 2,
-    product: "Portable Blender",
-    thumbnail: "🧋",
-    views: "1.8M",
-    estRevenue: "$35K",
-    platform: "TikTok",
-    hook: "Stop paying $15 for smoothies when you can make them anywhere",
-    hookType: "Pain Point | Cost Savings",
-    script: `Stop paying $15 for smoothies.
-
-This portable blender changed my morning routine completely.
-
-USB rechargeable, fits in your gym bag, and makes perfect smoothies in 30 seconds.
-
-I've saved over $200 this month alone.`,
-  },
-];
+import { GoogleAccountBanner } from "@/components/GoogleAccountBanner";
 
 const competitors = [
   {
@@ -57,56 +17,10 @@ const competitors = [
   },
 ];
 
-const influencers = [
-  {
-    id: 1,
-    handle: "@cozyroom.vibes",
-    avatar: "🏠",
-    location: "USA",
-    niche: "Home Decor",
-    followers: "34.2K",
-    engagement: "4.8%",
-    matchScore: 94,
-    audience: "18-34, 70% female",
-    postsAbout: "Room makeovers, aesthetic",
-    avgViews: "45K",
-    estRate: "$150-300",
-  },
-  {
-    id: 2,
-    handle: "@aesthetic.living",
-    avatar: "✨",
-    location: "UK",
-    niche: "Interior Design",
-    followers: "28.1K",
-    engagement: "5.2%",
-    matchScore: 91,
-    audience: "21-35, 65% female",
-    postsAbout: "Home styling, minimalism",
-    avgViews: "38K",
-    estRate: "$120-250",
-  },
-  {
-    id: 3,
-    handle: "@modernhome.tips",
-    avatar: "🪴",
-    location: "CA",
-    niche: "Home Tips",
-    followers: "52.8K",
-    engagement: "3.9%",
-    matchScore: 87,
-    audience: "25-40, 60% female",
-    postsAbout: "Home hacks, organization",
-    avgViews: "62K",
-    estRate: "$200-400",
-  },
-];
-
 export default function SpyTools() {
   const [searchQuery, setSearchQuery] = useState("");
   const [competitorUrl, setCompetitorUrl] = useState("");
   const [activeTab, setActiveTab] = useState("ads");
-  const [showBigSpy, setShowBigSpy] = useState(false);
 
   return (
     <div className="min-h-screen bg-background">
@@ -159,6 +73,12 @@ export default function SpyTools() {
                   <span>Top Performing Ads This Week</span>
                 </div>
               </div>
+
+              {/* Google account banner – BigSpy uses Google OAuth */}
+              <GoogleAccountBanner
+                platformName="BigSpy"
+                platformUrl="https://bigspy.com/page-analysis"
+              />
 
               {/* BigSpy Iframe Card */}
               <Card className="overflow-hidden">
@@ -261,6 +181,86 @@ export default function SpyTools() {
                 </Card>
               </div>
             </div>
+          </TabsContent>
+
+          {/* Stores Tab */}
+          <TabsContent value="stores" className="px-4 py-4 space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={competitorUrl}
+                onChange={(e) => setCompetitorUrl(e.target.value)}
+                placeholder="Enter competitor store URL..."
+                className="pl-9"
+              />
+            </div>
+
+            <div className="text-sm font-semibold flex items-center gap-2">
+              <Store className="w-4 h-4" />
+              Top Competitor Stores
+            </div>
+
+            {competitors.map((store) => (
+              <Card key={store.name}>
+                <CardContent className="p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-semibold text-sm">{store.name}</h3>
+                      <p className="text-xs text-muted-foreground">{store.rating} performer</p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-sm font-bold text-success">{store.estRevenue}</div>
+                      <div className="text-xs text-muted-foreground">Est. monthly</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">Trust Badges</p>
+                    <div className="flex flex-wrap gap-1">
+                      {store.trustBadges.map((badge) => (
+                        <span key={badge} className="text-[10px] bg-success/10 text-success border border-success/20 rounded px-1.5 py-0.5">
+                          ✓ {badge}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">Active Offers</p>
+                    <div className="space-y-0.5">
+                      {store.offers.map((offer) => (
+                        <p key={offer} className="text-xs text-foreground">• {offer}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase">Landing Page Layout</p>
+                    <div className="space-y-0.5">
+                      {store.layout.map((item, i) => (
+                        <p key={i} className="text-xs text-muted-foreground">{i + 1}. {item}</p>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-1"
+                      onClick={() => window.open(`https://${store.name}`, "_blank")}
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      Visit Store
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1 gap-1">
+                      <Copy className="w-3 h-3" />
+                      Copy Layout
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </TabsContent>
 
           {/* Influencers Tab */}

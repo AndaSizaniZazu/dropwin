@@ -294,6 +294,273 @@ export const researchProduct = async (
   }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Store Health Audit
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Normalized metric scores (0–100) derived from Supabase data.
+ * Each value represents how healthy that dimension is:
+ *   0  = critically bad
+ *   50 = neutral / unknown
+ *   100 = excellent
+ */
+export interface StoreHealthMetrics {
+  revenue_growth?: number;
+  profit_margin?: number;
+  order_frequency?: number;
+  customer_retention?: number;
+  inventory_turnover?: number;
+  cash_flow?: number;
+  conversion_rate?: number;
+  avg_order_value?: number;
+}
+
+export interface StoreHealthRequest {
+  store_url: string;
+  metrics?: StoreHealthMetrics;
+  products_count?: number;
+  audits_count?: number;
+}
+
+export interface HealthAlertItem {
+  type: string;         // 'critical' | 'sales' | 'stock' | 'retention' | 'financial'
+  severity: string;     // 'high' | 'medium' | 'low'
+  message: string;
+  recommendation: string;
+  resolved: boolean;
+}
+
+export interface StoreHealthResponse {
+  success: boolean;
+  score: number;
+  health_percentage: number;
+  label: string;        // 'EXCELLENT' | 'GOOD' | 'FAIR' | 'NEEDS IMPROVEMENT'
+  alerts: HealthAlertItem[];
+  score_breakdown: Record<string, {
+    score: number;
+    weighted_contribution: number;
+    weight: string;
+  }>;
+  products_count: number;
+  audits_count: number;
+  error?: string;
+}
+
+/**
+ * Convert raw Supabase product + audit rows into normalized 0–100 metric scores.
+ * Used by the StoreAudit page before calling calculateStoreHealth.
+ */
+export const buildMetricsFromSupabaseData = (
+  products: Array<{ trend_score?: number | null; competition_level?: string | null }>,
+  audits: Array<{ overall_score?: number | null }>
+): StoreHealthMetrics => {
+  const productsCount = products.length;
+  const auditsCount = audits.length;
+
+  // Average product trend score (already 0–100 in the DB)
+  const avgTrend =
+    productsCount > 0
+      ? products.reduce((sum, p) => sum + (p.trend_score ?? 50), 0) / productsCount
+      : 50;
+
+  // Average recent audit score
+  const recentAudits = audits.slice(0, 5);
+  const avgAuditScore =
+    recentAudits.length > 0
+      ? recentAudits.reduce((sum, a) => sum + (a.overall_score ?? 50), 0) / recentAudits.length
+      : 50;
+
+  // Fraction of low-competition products (proxy for margin/retention)
+  const lowCompFrac =
+    productsCount > 0
+      ? products.filter(p => p.competition_level === "low").length / productsCount
+      : 0.5;
+
+  const clamp = (v: number) => Math.min(100, Math.max(0, Math.round(v)));
+
+  return {
+    // Revenue growth ~ product trend scores
+    revenue_growth: clamp(avgTrend),
+    // Profit margin ~ trend × 0.8 + baseline
+    profit_margin: clamp(avgTrend * 0.8 + 10),
+    // Order frequency ~ number of audits run (proxy for activity)
+    order_frequency: clamp(Math.min(auditsCount * 15, 100)),
+    // Customer retention ~ low-competition products (easier to retain)
+    customer_retention: clamp(lowCompFrac * 70 + 30),
+    // Inventory turnover ~ trend score (trending products move fast)
+    inventory_turnover: clamp(avgTrend * 0.9),
+    // Cash flow ~ avg audit score
+    cash_flow: clamp(avgAuditScore * 0.9),
+    // Conversion rate ~ trend × 0.7 + floor
+    conversion_rate: clamp(avgTrend * 0.7 + 30),
+    // Avg order value ~ trend × 0.75 + floor
+    avg_order_value: clamp(avgTrend * 0.75 + 25),
+  };
+};
+
+/**
+ * POST /api/store/health-audit
+ * Send normalized metrics to the Python backend for weighted scoring.
+ */
+export const calculateStoreHealth = async (
+  request: StoreHealthRequest
+): Promise<StoreHealthResponse> => {
+  try {
+    requireApiBaseUrl();
+    const response = await fetch(`${API_BASE_URL}/api/store/health-audit`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(request),
+    });
+
+    const data: StoreHealthResponse = await response.json();
+
+    if (!response.ok) {
+      throw new Error(data.error || "Health audit failed");
+    }
+
+    return data;
+  } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error occurred";
+    throw new Error(`Store health audit failed: ${errorMessage}`);
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Google Trends — Trending Products (fetched directly in the browser)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TrendNewsItem {
+  title: string;
+  snippet: string;
+  source: string;
+  time: string;
+}
+
+export interface TrendingProduct {
+  id: number;
+  name: string;
+  image: string;
+  traffic: string;
+  traffic_num: number;
+  sentiment: { positive: number; neutral: number; negative: number };
+  whyTrending: string;
+  adFatigue: number;
+  adFatigueViews: string;
+  newsItems: TrendNewsItem[];
+}
+
+export interface TrendingProductsResponse {
+  success: boolean;
+  geo: string;
+  trends: TrendingProduct[];
+  error?: string;
+}
+
+
+const _adFatigue = (n: number) => {
+  if (n >= 1_000_000) return 92;
+  if (n >= 500_000)   return 78;
+  if (n >= 100_000)   return 58;
+  if (n >= 50_000)    return 38;
+  return 18;
+};
+
+// Fetch hot posts from multiple dropshipping-relevant subreddits.
+// Reddit blocks direct browser CORS, so we proxy through corsproxy.io with an allorigins fallback.
+const _REDDIT_URL =
+  "https://www.reddit.com/r/dropshipping+ecommerce+AliExpress/hot.json?limit=25&raw_json=1";
+
+async function _fetchReddit(signal: AbortSignal): Promise<any> {
+  const proxies = [
+    `https://corsproxy.io/?${encodeURIComponent(_REDDIT_URL)}`,
+    `https://api.allorigins.win/raw?url=${encodeURIComponent(_REDDIT_URL)}`,
+  ];
+  let lastErr: unknown;
+  for (const url of proxies) {
+    try {
+      const res = await fetch(url, { signal });
+      if (res.ok) return res.json();
+      lastErr = new Error(`HTTP ${res.status} from ${url}`);
+    } catch (e) {
+      lastErr = e;
+    }
+  }
+  throw lastErr ?? new Error("All proxies failed");
+}
+
+export const fetchTrendingProducts = async (_geo = "ZA"): Promise<TrendingProductsResponse> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 20_000);
+
+  try {
+    const json = await _fetchReddit(controller.signal);
+    const posts: any[] = json?.data?.children ?? [];
+
+    const trends: TrendingProduct[] = posts
+      .filter((c: any) => !c.data.stickied && c.data.title)
+      .slice(0, 15)
+      .map((c: any, idx: number) => {
+        const p        = c.data;
+        const upvotes  = p.score as number;
+        const ratio    = (p.upvote_ratio as number) ?? 0.75;
+        const comments = p.num_comments as number;
+        const selftext = (p.selftext as string) ?? "";
+
+        const trafficStr =
+          upvotes >= 1_000
+            ? `${(upvotes / 1_000).toFixed(1)}K`
+            : String(upvotes);
+
+        // Sentiment derived from upvote ratio (0–1) — directly represents community approval
+        const posPct = Math.round(ratio * 75);
+        const negPct = Math.round((1 - ratio) * 45);
+        const neuPct = Math.max(0, 100 - posPct - negPct);
+
+        const snippet =
+          selftext.length > 220 ? selftext.slice(0, 220).trimEnd() + "…" : selftext;
+
+        const newsItems: TrendNewsItem[] = snippet
+          ? [{
+              title:   `Posted by u/${p.author}`,
+              snippet,
+              source:  `r/${p.subreddit}`,
+              time:    new Date((p.created_utc as number) * 1000).toLocaleDateString(),
+            }]
+          : [];
+
+        const thumbnail =
+          p.thumbnail && (p.thumbnail as string).startsWith("http")
+            ? (p.thumbnail as string)
+            : "";
+
+        return {
+          id:             idx + 1,
+          name:           p.title as string,
+          image:          thumbnail,
+          traffic:        `${trafficStr} upvotes`,
+          traffic_num:    upvotes,
+          sentiment:      { positive: posPct, neutral: neuPct, negative: negPct },
+          whyTrending:
+            snippet ||
+            `Trending in r/${p.subreddit} — ${trafficStr} upvotes, ${comments} comments.`,
+          adFatigue:      _adFatigue(upvotes * 15),
+          adFatigueViews: `${comments} comments`,
+          newsItems,
+        };
+      });
+
+    return { success: true, geo: "REDDIT", trends };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unknown error";
+    throw new Error(`Could not load trends: ${msg}`);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 /**
  * Checks API health status
  */

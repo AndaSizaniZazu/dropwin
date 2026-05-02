@@ -14,6 +14,50 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_alerts: {
+        Row: {
+          audit_id: string | null
+          created_at: string
+          id: string
+          message: string
+          recommendation: string
+          resolved: boolean
+          severity: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          audit_id?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          recommendation?: string
+          resolved?: boolean
+          severity: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          audit_id?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          recommendation?: string
+          resolved?: boolean
+          severity?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_alerts_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: false
+            referencedRelation: "store_audits"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -82,8 +126,10 @@ export type Database = {
       }
       store_audits: {
         Row: {
+          alerts_count: number | null
           audit_data: Json | null
           created_at: string
+          health_percentage: number | null
           id: string
           overall_score: number | null
           recommendations: Json | null
@@ -92,8 +138,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          alerts_count?: number | null
           audit_data?: Json | null
           created_at?: string
+          health_percentage?: number | null
           id?: string
           overall_score?: number | null
           recommendations?: Json | null
@@ -102,8 +150,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          alerts_count?: number | null
           audit_data?: Json | null
           created_at?: string
+          health_percentage?: number | null
           id?: string
           overall_score?: number | null
           recommendations?: Json | null

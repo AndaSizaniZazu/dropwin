@@ -1,6 +1,7 @@
 import { ArrowLeft, ExternalLink, Zap } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { GoogleAccountBanner } from "@/components/GoogleAccountBanner";
 
 export default function AISearchCenter() {
   const navigate = useNavigate();
@@ -35,8 +36,11 @@ export default function AISearchCenter() {
         </div>
       </header>
 
+      {/* Google account banner */}
+      <GoogleAccountBanner platformName="Accio" platformUrl="https://www.accio.com/" />
+
       {/* Iframe Container */}
-      <div className="w-full h-[calc(100vh-3.5rem)]">
+      <div className="w-full h-[calc(100vh-3.5rem-52px)]">
         <iframe
           src="https://www.accio.com/"
           className="w-full h-full border-0"
