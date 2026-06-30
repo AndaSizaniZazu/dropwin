@@ -4,8 +4,12 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
+const isGitHubPages = process.env.GITHUB_PAGES === "true";
+const base = isGitHubPages ? "/dropwin/" : "/";
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  base,
   server: {
     host: "::",
     port: 8080,
@@ -24,8 +28,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#0A0A0F",
         display: "standalone",
         orientation: "portrait",
-        scope: "/",
-        start_url: "/",
+        scope: base,
+        start_url: base,
         icons: [
           {
             src: "pwa-192x192.png",
