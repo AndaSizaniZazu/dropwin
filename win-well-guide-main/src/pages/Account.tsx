@@ -52,7 +52,7 @@ export default function Account() {
 
   const handleSignOut = async () => {
     await signOut();
-    navigate("/auth");
+    navigate("/");
     toast({ title: "Signed out", description: "See you next time!" });
   };
 
@@ -80,7 +80,7 @@ export default function Account() {
       }
       localStorage.removeItem(STORE_URL_KEY);
       localStorage.removeItem(STORE_NAME_KEY);
-      navigate("/auth");
+      navigate("/");
       toast({ title: "Account deleted", description: "Your data has been removed." });
     } catch {
       toast({

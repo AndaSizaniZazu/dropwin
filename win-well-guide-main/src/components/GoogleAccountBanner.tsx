@@ -17,7 +17,6 @@
 import { ExternalLink, CheckCircle2, AlertCircle, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 
 interface GoogleAccountBannerProps {
   /** Display name shown in the button, e.g. "BigSpy" */
@@ -28,18 +27,12 @@ interface GoogleAccountBannerProps {
 
 export function GoogleAccountBanner({ platformName, platformUrl }: GoogleAccountBannerProps) {
   const { user, signInWithGoogle } = useAuth();
-  const navigate = useNavigate();
-
   const email = user?.email ?? "";
   const avatar = user?.user_metadata?.avatar_url as string | undefined;
   const name   = (user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? email) as string;
 
   const handleGoogleLogin = async () => {
-    try {
-      await signInWithGoogle();
-    } catch {
-      navigate("/auth");
-    }
+    await signInWithGoogle();
   };
 
   if (!user) {
